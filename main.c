@@ -37,6 +37,7 @@ void compile_file(char* filename) {
     dispatch(line, ++line_no);
   }
 
+  print_data_items();
   fclose(f);  
 }
 
