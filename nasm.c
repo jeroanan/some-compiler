@@ -17,10 +17,10 @@ struct DataItem {
 
 int data_item_counter;
 
-const char* code_file_name = "code.asm";
+const char* code_file_name = "output/code.asm";
 FILE* code_file;
 
-const char* final_file_name = "program.asm";
+const char* final_file_name = "output/program.asm";
 FILE* final_file;
 
 struct DataItem** data_items;

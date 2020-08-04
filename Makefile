@@ -16,3 +16,4 @@ clean:
 	rm comp; rm -rf obj
 
 $(shell mkdir -p obj)
+$(shell mkdir -p output)
