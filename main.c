@@ -1,3 +1,5 @@
+#include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +21,18 @@ int main(int argc, char* argv[]) {
   exit(EXIT_SUCCESS);
 }
 
+bool string_is_empty(char* s) {
+
+  while (*s) {
+    if (!isspace((unsigned char)*s)) {
+      return false;
+    }
+    s++;
+  }
+
+  return true;
+}
+
 void compile_file(char* filename) {
   char *line = NULL;
   size_t len = 0;
@@ -33,7 +47,10 @@ void compile_file(char* filename) {
   }
 
   while ((read = getline(&line, &len, f)) != -1) {
-    dispatch(line, ++line_no);
+    ++line_no;
+    if (!string_is_empty(line)) {
+      dispatch(line, line_no);
+    } 
   }
   prog_exit();
 
