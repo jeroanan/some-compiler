@@ -33,6 +33,29 @@ bool string_is_empty(char* s) {
   return true;
 }
 
+char* trim_string(char* s) {
+
+  int i;
+
+  while(*s) {
+    if (!isspace((unsigned char)*s)) {
+      break;
+    }
+
+    s++;
+  }
+
+  for (i=strlen(s)-1;i>0;i--) {
+    if (isspace((unsigned char)s[i])) {
+      s[i] = '\0';
+    } else {
+      break;
+    }
+  }
+
+  return s;
+}
+
 void compile_file(char* filename) {
   char *line = NULL;
   size_t len = 0;
@@ -49,7 +72,7 @@ void compile_file(char* filename) {
   while ((read = getline(&line, &len, f)) != -1) {
     ++line_no;
     if (!string_is_empty(line)) {
-      dispatch(line, line_no);
+      dispatch(trim_string(line), line_no);
     } 
   }
   prog_exit();
@@ -59,19 +82,59 @@ void compile_file(char* filename) {
   fclose(f);  
 }
 
+char* get_keyword(char* s) {
+  const int max_size = 10;
+
+  int i;
+  char kw[max_size];
+  char* out;
+
+  for (i=0; i<strlen(s) && i<max_size; i++) {
+    if (!isspace((unsigned char)s[i])) {
+      kw[i]=s[i];
+    }
+  }
+
+  out = (char*)malloc(strlen(kw) * sizeof(char*));
+  strcpy(out, kw);
+  printf("%s\n", out);
+  return out;
+}
+
+char* extract_string(char* s, int line_no) {
+  if (*s!='\'') {
+    comp_error_at_line("Missing opening '", line_no);
+  }
+
+  s++;
+
+  if (s[strlen(s)-1]!='\'') {
+    comp_error_at_line("Missing closing '", line_no);
+  }
+
+  s[strlen(s)-1] = '\0';
+
+  return s;
+}
+
 void dispatch(char* s, int line_no) {
-  char *t;
   char *msg;
-  /* get first word. this will be our keyword for now. */
-  t = strtok(s, " ");
+  char* keyword;
+
+  keyword = get_keyword(s);
+
   const char *unknown_keyword = "Unknown keyword: ";
 
-  if(strcmp(t, "print")==0) {
-    print("ah");
+  if(strcmp(keyword, "print")==0) {
+    s+=6;
+    print(extract_string(s, line_no));
   } else {
-    msg = (char*)malloc(strlen(unknown_keyword)*sizeof(char*) + strlen(t)*sizeof(char*));
-    sprintf(msg, "%s%s", unknown_keyword, t);
+    msg = (char*)malloc(strlen(unknown_keyword)*sizeof(char*) + strlen(keyword)*sizeof(char*));
+    sprintf(msg, "%s%s", unknown_keyword, keyword);
     comp_error_at_line(msg, line_no);
     free(msg);
   }
+
+  free(keyword);
+
 }
