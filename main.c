@@ -16,7 +16,6 @@ int main(int argc, char* argv[]) {
 
   compile_file(argv[1]);
 
-
   exit(EXIT_SUCCESS);
 }
 
@@ -38,6 +37,7 @@ void compile_file(char* filename) {
   }
   prog_exit();
 
+  print_data_items();
   finalise();
   fclose(f);  
 }
@@ -58,5 +58,3 @@ void dispatch(char* s, int line_no) {
     free(msg);
   }
 }
-
-

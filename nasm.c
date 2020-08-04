@@ -6,6 +6,8 @@
 
 #include "nasm.h"
 
+#define NASM_DEBUG
+
 FILE* get_file(void);
 void write_to_code_file(char* t);
 void write_data_items(void);
@@ -43,46 +45,49 @@ void add_data_item(char* name, char* value) {
   data_item_counter++;
 }
 
+char* join_two_strings(char* s1, char* s2) {
+  char* tmp;
+  tmp = (char*)malloc(strlen(s1)*sizeof(char*) + strlen(s2)*sizeof(char*));
+  sprintf(tmp, "%s%s", s1, s2);
+
+  return tmp;
+}
+
 void print(char* s) {
   char num[80];
-  const char* data_name_prefix = "data";
+  char* data_name_prefix = "data";
   char* data_label;
   char* data_len_label;
 
   char* tmp;
   char* tmp2;
   
-  const char* ecx_inst = "mov ecx,";
-  const char* edx_inst = "mov edx,";
-  const char* len_suffix = "len";
+  char* ecx_inst = "mov ecx,";
+  char* edx_inst = "mov edx,";
+  char* len_suffix = "len";
 
   tmp = (char*)malloc(sizeof(char*));
   tmp2 = (char*)malloc(sizeof(char*));
 
-  data_label = (char*)malloc(sizeof(char*));
-  sprintf(data_label, "%s%s", data_name_prefix, num);
+  data_label = join_two_strings(data_name_prefix, num);
   sprintf(tmp, "db '%s',10", s);
-
   add_data_item(data_label, tmp);
   free(tmp);
 
   write_to_code_file("mov eax,4");
   write_to_code_file("mov ebx,1");
   
-  tmp = (char*)malloc(strlen(ecx_inst)*sizeof(char*) + strlen(data_label)*sizeof(char*));
-  sprintf(tmp, "%s%s", ecx_inst, data_label);
+  tmp = join_two_strings(ecx_inst, data_label);
   write_to_code_file(tmp);
   free(tmp);
 
-  data_len_label = (char*)malloc(strlen(data_label)*sizeof(char*) + strlen(len_suffix)*sizeof(char*));
-  sprintf(data_len_label, "%s%s", data_label, len_suffix);
+  data_len_label = join_two_strings(data_label, len_suffix);
   sprintf(tmp2, "equ $-%s", data_label);
 
   add_data_item(data_len_label, tmp2);
   free(tmp2);
 
-  tmp = (char*) malloc(strlen(edx_inst)*sizeof(char*) + strlen(data_len_label)*sizeof(char*));
-  sprintf(tmp, "%s%s", edx_inst, data_len_label);
+  tmp = join_two_strings(edx_inst, data_len_label);
   write_to_code_file(tmp);
   free(tmp);
 
