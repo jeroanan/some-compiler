@@ -9,6 +9,8 @@
 FILE* get_file(void);
 void write_to_code_file(char* t);
 
+char code_file_template[15] = "/tmp/codeXXXXXX";
+
 struct DataItem {
   char name[80];
   char value[1024];
@@ -34,9 +36,6 @@ void add_data_item(char* name, char* value) {
   }
 
   data_items[data_item_counter] = di;
-  
-  free(di);
-
   data_item_counter++;
 }
 
@@ -59,40 +58,47 @@ void print(char* s) {
   data_label = (char*)malloc(sizeof(char*));
   sprintf(data_label, "%s%s", data_name_prefix, num);
   sprintf(tmp, "db '%s',10", s);
+  free(tmp);
 
   add_data_item(data_label, tmp);
   
   write_to_code_file("mov eax,4");
   write_to_code_file("mov ebx,1");
   
+  tmp = (char*)malloc(strlen(ecx_inst)*sizeof(char*) + strlen(data_label)*sizeof(char*));
   sprintf(tmp, "%s%s", ecx_inst, data_label);
   write_to_code_file(tmp);
   free(tmp);
 
-  tmp = (char*)malloc(strlen(data_label)*sizeof(char*) + strlen(len_suffix)*sizeof(char*));
-
-  sprintf(tmp, "%s%s", data_label, len_suffix);
+  data_len_label = (char*)malloc(strlen(data_label)*sizeof(char*) + strlen(len_suffix)*sizeof(char*));
+  sprintf(data_len_label, "%s%s", data_label, len_suffix);
   sprintf(tmp2, "equ $-%s", data_label);
 
-  add_data_item(tmp, tmp2);
-  free(tmp);
+  add_data_item(data_len_label, tmp2);
   free(tmp2);
 
-  sprintf(tmp, "%s%s", edx_inst, tmp);
+  tmp = (char*) malloc(strlen(edx_inst)*sizeof(char*) + strlen(data_len_label)*sizeof(char*));
+  sprintf(tmp, "%s%s", edx_inst, data_len_label);
   write_to_code_file(tmp);
+  free(tmp);
 
   free(data_label);
-  free(tmp);
+  free(data_len_label);
   
   write_to_code_file("int 80h");
 }
 
+void prog_exit(void) {
+  write_to_code_file("mov eax,1");
+  write_to_code_file("mov ebx,0");
+  write_to_code_file("int 80h");
+}
+
 void set_code_file(void) {
-  char template[15] = "/tmp/codeXXXXXX";
   int fd;
 
   if (code_file==0) {
-    fd = mkstemp(template);
+    fd = mkstemp(code_file_template);
     code_file = fdopen(fd, "w");
   }
 }
@@ -103,7 +109,7 @@ void write_to_code_file(char* t) {
   fprintf(code_file, "%s\n", t);
 }
 
-void print_data_items() {
+void print_data_items(void) {
   int i;
 
   for (i=0;i<data_item_counter;i++) {

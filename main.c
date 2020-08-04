@@ -36,6 +36,7 @@ void compile_file(char* filename) {
   while ((read = getline(&line, &len, f)) != -1) {
     dispatch(line, ++line_no);
   }
+  prog_exit();
 
   print_data_items();
   fclose(f);  
