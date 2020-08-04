@@ -8,8 +8,7 @@
 
 FILE* get_file(void);
 void write_to_code_file(char* t);
-
-char code_file_template[15] = "/tmp/codeXXXXXX";
+void write_data_items(void);
 
 struct DataItem {
   char name[80];
@@ -17,7 +16,12 @@ struct DataItem {
 };
 
 int data_item_counter;
+
+const char* code_file_name = "code.asm";
 FILE* code_file;
+
+const char* final_file_name = "program.asm";
+FILE* final_file;
 
 struct DataItem** data_items;
 
@@ -58,10 +62,10 @@ void print(char* s) {
   data_label = (char*)malloc(sizeof(char*));
   sprintf(data_label, "%s%s", data_name_prefix, num);
   sprintf(tmp, "db '%s',10", s);
-  free(tmp);
 
   add_data_item(data_label, tmp);
-  
+  free(tmp);
+
   write_to_code_file("mov eax,4");
   write_to_code_file("mov ebx,1");
   
@@ -95,11 +99,8 @@ void prog_exit(void) {
 }
 
 void set_code_file(void) {
-  int fd;
-
-  if (code_file==0) {
-    fd = mkstemp(code_file_template);
-    code_file = fdopen(fd, "w");
+  if (!code_file) {
+    code_file = fopen(code_file_name, "w");
   }
 }
 
@@ -107,14 +108,77 @@ void write_to_code_file(char* t) {
   set_code_file();
 
   fprintf(code_file, "%s\n", t);
+
+#ifdef NASM_DEBUG
+  printf("%s\n", t);
+#endif
+}
+
+void set_final_file(void) {
+  if (!final_file) {
+    final_file = fopen(final_file_name, "w");
+  }
+}
+
+void write_to_final_file(char* t) {
+  set_final_file();
+  fprintf(final_file, "%s\n", t);
+}
+
+void finalise(void) {
+  char *line = NULL;
+  size_t len = 0;
+  ssize_t read;
+
+  char* data_section_header = "SECTION .DATA";
+  char* text_section_header = "SECTION .TEXT";
+  char* start_global = "GLOBAL _start";
+  char* start_label = "_start:";
+
+  fclose(code_file);
+
+  write_to_final_file(data_section_header);
+  write_data_items();
+  write_to_final_file(text_section_header);
+  write_to_final_file(start_global);
+  write_to_final_file(start_label);
+
+  code_file = fopen(code_file_name, "r");
+
+  while ((read = getline(&line, &len, code_file)) != -1) {
+    write_to_final_file(line);
+  }
+
+  fclose(code_file);
+
+  fclose(final_file);
+}
+
+void write_data_items(void) {
+  int i;
+  char* to_write;
+  const char* separator = ": ";
+
+  for (i=0;i<data_item_counter;i++) {
+    to_write = (char*)malloc(
+        strlen(data_items[i]->name)*sizeof(char*) +
+        strlen(separator)*sizeof(char*) +
+        strlen(data_items[i]->value)*sizeof(char*));
+
+    sprintf(to_write, "%s%s%s", data_items[i]->name, separator, data_items[i]->value);
+
+    write_to_final_file(to_write);
+    free(to_write);
+  }
 }
 
 void print_data_items(void) {
+#ifdef NASM_DEBUG
   int i;
 
   for (i=0;i<data_item_counter;i++) {
     printf("%d: name: %s, value: %s\n", i, data_items[i]->name, data_items[i]->value);
   }
 
-  free(data_items);
+#endif
 }

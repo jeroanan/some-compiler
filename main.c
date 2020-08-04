@@ -38,7 +38,7 @@ void compile_file(char* filename) {
   }
   prog_exit();
 
-  print_data_items();
+  finalise();
   fclose(f);  
 }
 

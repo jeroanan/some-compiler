@@ -3,4 +3,5 @@
 void print(char* s);
 void print_data_items(void);
 void prog_exit(void);
+void finalise(void);
 #endif
