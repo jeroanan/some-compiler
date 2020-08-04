@@ -97,7 +97,7 @@ char* get_keyword(char* s) {
 
   out = (char*)malloc(strlen(kw) * sizeof(char*));
   strcpy(out, kw);
-  printf("%s\n", out);
+
   return out;
 }
 
