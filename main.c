@@ -56,6 +56,22 @@ char* trim_string(char* s) {
   return s;
 }
 
+char* remove_comments(char* s) {
+  int i;
+  bool in_string = false;
+
+  for (i=0;i<strlen(s);i++) {
+    if (s[i]=='#' && !in_string) {
+      s[i] = '\0';
+      break;
+    } else if (s[i]=='\'') {
+      in_string = !in_string;
+    }
+  }
+
+  return s;
+}
+
 void compile_file(char* filename) {
   char *line = NULL;
   size_t len = 0;
@@ -72,7 +88,10 @@ void compile_file(char* filename) {
   while ((read = getline(&line, &len, f)) != -1) {
     ++line_no;
     if (!string_is_empty(line)) {
-      dispatch(trim_string(line), line_no);
+      dispatch(
+          trim_string(
+            remove_comments(line)), 
+          line_no);
     } 
   }
   prog_exit();
@@ -91,6 +110,8 @@ char* get_keyword(char* s) {
       return s;
     }
   }
+
+  return s;
 }
 
 char* extract_string(char* s, int line_no) {
@@ -109,9 +130,14 @@ char* extract_string(char* s, int line_no) {
   return s;
 }
 
+
 void dispatch(char* s, int line_no) {
   char *msg;
   char* keyword;
+
+  if (!strlen(s)) {
+    return;
+  }
 
   keyword = get_keyword(s);
 
