@@ -83,22 +83,14 @@ void compile_file(char* filename) {
 }
 
 char* get_keyword(char* s) {
-  const int max_size = 10;
-
   int i;
-  char kw[max_size];
-  char* out;
 
-  for (i=0; i<strlen(s) && i<max_size; i++) {
-    if (!isspace((unsigned char)s[i])) {
-      kw[i]=s[i];
+  for (i=0; i<strlen(s); i++) {
+    if (isspace(s[i])) {
+      s[i] = '\0'; 
+      return s;
     }
   }
-
-  out = (char*)malloc(strlen(kw) * sizeof(char*));
-  strcpy(out, kw);
-
-  return out;
 }
 
 char* extract_string(char* s, int line_no) {
@@ -134,7 +126,4 @@ void dispatch(char* s, int line_no) {
     comp_error_at_line(msg, line_no);
     free(msg);
   }
-
-  free(keyword);
-
 }
