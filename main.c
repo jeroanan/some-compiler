@@ -96,7 +96,6 @@ void compile_file(char* filename) {
   }
   prog_exit();
 
-  print_data_items();
   finalise();
   fclose(f);  
 }
@@ -146,6 +145,9 @@ void dispatch(char* s, int line_no) {
   if(strcmp(keyword, "print")==0) {
     s+=6;
     print(extract_string(s, line_no));
+  } else if (strcmp(keyword, "int")==0) {
+    s+=4;
+    declare_variable('i', s);
   } else {
     msg = (char*)malloc(strlen(unknown_keyword)*sizeof(char*) + strlen(keyword)*sizeof(char*));
     sprintf(msg, "%s%s", unknown_keyword, keyword);

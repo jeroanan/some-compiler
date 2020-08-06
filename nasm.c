@@ -3,10 +3,7 @@
 #include <string.h>
 
 #include "error.h"
-
 #include "nasm.h"
-
-#define NASM_DEBUG
 
 FILE* get_file(void);
 void write_to_code_file(char* t);
@@ -19,6 +16,9 @@ struct DataItem {
 
 int data_item_counter;
 
+const char* data_file_name = "output/data.asm";
+FILE* data_file;
+
 const char* code_file_name = "output/code.asm";
 FILE* code_file;
 
@@ -27,22 +27,15 @@ FILE* final_file;
 
 struct DataItem** data_items;
 
-void add_data_item(char* name, char* value) {
-  struct DataItem* di;
-
-  di = (struct DataItem*)malloc(sizeof(struct DataItem*));
-
-  strcpy(di->name,  name);
-  strcpy(di->value, value);
-
-  if (data_item_counter==0) {
-    data_items = (struct DataItem**)malloc(sizeof(struct DataItem));
-  } else {
-    data_items = (struct DataItem**)realloc(data_items, sizeof(data_items) + sizeof(struct DataItem));
+void set_data_file(void) {
+  if (!data_file) {
+    data_file = fopen(data_file_name, "w");
   }
+}
 
-  data_items[data_item_counter] = di;
-  data_item_counter++;
+void add_data_item(char* name, char* value) {
+  set_data_file();
+  fprintf(data_file, "%s: %s\n", name, value);
 }
 
 char* join_two_strings(char* s1, char* s2) {
@@ -69,6 +62,7 @@ void print(char* s) {
   tmp = (char*)malloc(sizeof(char*));
   tmp2 = (char*)malloc(sizeof(char*));
 
+  sprintf(num, "%d", data_item_counter);
   data_label = join_two_strings(data_name_prefix, num);
   sprintf(tmp, "db '%s',10", s);
   add_data_item(data_label, tmp);
@@ -87,6 +81,8 @@ void print(char* s) {
   add_data_item(data_len_label, tmp2);
   free(tmp2);
 
+  ++data_item_counter;
+
   tmp = join_two_strings(edx_inst, data_len_label);
   write_to_code_file(tmp);
   free(tmp);
@@ -95,6 +91,27 @@ void print(char* s) {
   free(data_len_label);
   
   write_to_code_file("int 80h");
+}
+
+void declare_variable(char type, char* name) {
+
+  char* nasm_type;
+  char* initial_value;
+  char value_string[80];
+
+  switch (type) {
+    case 'i':
+      nasm_type = "DW";
+      initial_value = "0";
+      break;
+    default:
+      fprintf(stderr, "Unknown type: %s", type);
+      exit(EXIT_FAILURE);
+  }
+
+  sprintf(value_string, "%s %s", nasm_type, initial_value);
+  add_data_item(name, value_string);
+
 }
 
 void prog_exit(void) {
@@ -127,7 +144,7 @@ void set_final_file(void) {
 
 void write_to_final_file(char* t) {
   set_final_file();
-  fprintf(final_file, "%s\n", t);
+  fprintf(final_file, "%s", t);
 }
 
 void finalise(void) {
@@ -135,15 +152,24 @@ void finalise(void) {
   size_t len = 0;
   ssize_t read;
 
-  char* data_section_header = "SECTION .DATA";
-  char* text_section_header = "SECTION .TEXT";
-  char* start_global = "GLOBAL _start";
-  char* start_label = "_start:";
+  char* data_section_header = "SECTION .DATA\n";
+  char* text_section_header = "SECTION .TEXT\n";
+  char* start_global = "GLOBAL _start\n";
+  char* start_label = "_start:\n";
 
   fclose(code_file);
+  fclose(data_file);
 
   write_to_final_file(data_section_header);
-  write_data_items();
+
+  data_file = fopen(data_file_name, "r");
+
+  while ((read = getline(&line, &len, data_file)) != -1) {
+    write_to_final_file(line);
+  }
+
+  fclose(data_file);
+
   write_to_final_file(text_section_header);
   write_to_final_file(start_global);
   write_to_final_file(start_label);
@@ -155,35 +181,6 @@ void finalise(void) {
   }
 
   fclose(code_file);
-
   fclose(final_file);
 }
 
-void write_data_items(void) {
-  int i;
-  char* to_write;
-  const char* separator = ": ";
-
-  for (i=0;i<data_item_counter;i++) {
-    to_write = (char*)malloc(
-        strlen(data_items[i]->name)*sizeof(char*) +
-        strlen(separator)*sizeof(char*) +
-        strlen(data_items[i]->value)*sizeof(char*));
-
-    sprintf(to_write, "%s%s%s", data_items[i]->name, separator, data_items[i]->value);
-
-    write_to_final_file(to_write);
-    free(to_write);
-  }
-}
-
-void print_data_items(void) {
-#ifdef NASM_DEBUG
-  int i;
-
-  for (i=0;i<data_item_counter;i++) {
-    printf("%d: name: %s, value: %s\n", i, data_items[i]->name, data_items[i]->value);
-  }
-
-#endif
-}
