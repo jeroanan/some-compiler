@@ -100,14 +100,24 @@ void compile_file(char* filename) {
   fclose(f);  
 }
 
-char* get_keyword(char* s) {
+int get_location_of_character(char* s, char c) {
+ 
   int i;
 
-  for (i=0; i<strlen(s); i++) {
-    if (isspace(s[i])) {
-      s[i] = '\0'; 
-      return s;
+  for (i=0; *s!='\0'; i++, s++) {
+    if (*s == c) {
+      return i;
     }
+  }
+
+  return -1;
+}
+
+char* get_first_word(char* s) {
+  int l;
+
+  if ((l = get_location_of_character(s, ' ')) > -1) {
+    s[l] = '\0';
   }
 
   return s;
@@ -138,7 +148,7 @@ void dispatch(char* s, int line_no) {
     return;
   }
 
-  keyword = get_keyword(s);
+  keyword = get_first_word(s);
 
   const char *unknown_keyword = "Unknown keyword: ";
 
