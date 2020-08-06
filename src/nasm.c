@@ -10,14 +10,12 @@ void write_to_code_file(char* t);
 void write_data_items(void);
 
 struct DataItem {
-  char name[80];
-  char value[1024];
+  char* name;
+  char* value;
 };
 
 int data_item_counter;
-
-const char* data_file_name = "output/data.asm";
-FILE* data_file;
+int data_item_members;
 
 const char* code_file_name = "output/code.asm";
 FILE* code_file;
@@ -25,17 +23,25 @@ FILE* code_file;
 const char* final_file_name = "output/program.asm";
 FILE* final_file;
 
-struct DataItem** data_items;
-
-void set_data_file(void) {
-  if (!data_file) {
-    data_file = fopen(data_file_name, "w");
-  }
-}
+struct DataItem* data_items;
 
 void add_data_item(char* name, char* value) {
-  set_data_file();
-  fprintf(data_file, "%s: %s\n", name, value);
+
+  struct DataItem di; 
+
+  if (data_item_members == 0) {
+    data_items = (struct DataItem*)malloc(sizeof (struct DataItem) * 1);
+  } else {
+    data_items = (struct DataItem*)realloc(data_items, (data_item_members+1) * sizeof (struct DataItem));
+  }
+  
+  di.name = (char*)malloc(strlen(name) * sizeof(char*));
+  di.value = (char*)malloc(strlen(value) * sizeof(char*));
+  strcpy(di.name, name);
+  strcpy(di.value, value);
+ 
+  data_items[data_item_members] = di;
+  ++data_item_members;
 }
 
 char* join_two_strings(char* s1, char* s2) {
@@ -46,24 +52,27 @@ char* join_two_strings(char* s1, char* s2) {
   return tmp;
 }
 
+#define DATA_NAME_PREFIX "data"
+#define ECX_INST "mov ecx,"
+#define EDX_INST "mov edx,"
+#define LEN_SUFFIX "len"
+
 void print(char* s) {
   char num[80];
+  /*
   char* data_name_prefix = "data";
+  */
   char* data_label;
   char* data_len_label;
 
   char* tmp;
   char* tmp2;
   
-  char* ecx_inst = "mov ecx,";
-  char* edx_inst = "mov edx,";
-  char* len_suffix = "len";
-
   tmp = (char*)malloc(sizeof(char*));
   tmp2 = (char*)malloc(sizeof(char*));
 
   sprintf(num, "%d", data_item_counter);
-  data_label = join_two_strings(data_name_prefix, num);
+  data_label = join_two_strings(DATA_NAME_PREFIX, num);
   sprintf(tmp, "db '%s',10", s);
   add_data_item(data_label, tmp);
   free(tmp);
@@ -71,11 +80,11 @@ void print(char* s) {
   write_to_code_file("mov eax,4");
   write_to_code_file("mov ebx,1");
   
-  tmp = join_two_strings(ecx_inst, data_label);
+  tmp = join_two_strings(ECX_INST, data_label);
   write_to_code_file(tmp);
   free(tmp);
 
-  data_len_label = join_two_strings(data_label, len_suffix);
+  data_len_label = join_two_strings(data_label, LEN_SUFFIX);
   sprintf(tmp2, "equ $-%s", data_label);
 
   add_data_item(data_len_label, tmp2);
@@ -83,7 +92,7 @@ void print(char* s) {
 
   ++data_item_counter;
 
-  tmp = join_two_strings(edx_inst, data_len_label);
+  tmp = join_two_strings(EDX_INST, data_len_label);
   write_to_code_file(tmp);
   free(tmp);
 
@@ -92,6 +101,11 @@ void print(char* s) {
   
   write_to_code_file("int 80h");
 }
+
+#undef DATA_NAME_PREFIX
+#undef ECX_INST
+#undef EDX_INST
+#undef LEN_SUFFIX
 
 void declare_variable(char type, char* name) {
 
@@ -120,14 +134,10 @@ void prog_exit(void) {
   write_to_code_file("int 80h");
 }
 
-void set_code_file(void) {
+void write_to_code_file(char* t) {
   if (!code_file) {
     code_file = fopen(code_file_name, "w");
   }
-}
-
-void write_to_code_file(char* t) {
-  set_code_file();
 
   fprintf(code_file, "%s\n", t);
 
@@ -136,43 +146,47 @@ void write_to_code_file(char* t) {
 #endif
 }
 
-void set_final_file(void) {
+void write_to_final_file(char* t) {
   if (!final_file) {
     final_file = fopen(final_file_name, "w");
   }
-}
 
-void write_to_final_file(char* t) {
-  set_final_file();
   fprintf(final_file, "%s", t);
 }
+
+#define DATA_SECTION_HEADER "SECTION .DATA\n"
+#define TEXT_SECTION_HEADER  "SECTION .TEXT\n"
+#define START_LABEL "_start:\n"
+#define START_GLOBAL "GLOBAL _start\n"
 
 void finalise(void) {
   char *line = NULL;
   size_t len = 0;
   ssize_t read;
+  int i;
+  char* data_line;
 
-  char* data_section_header = "SECTION .DATA\n";
-  char* text_section_header = "SECTION .TEXT\n";
-  char* start_global = "GLOBAL _start\n";
-  char* start_label = "_start:\n";
+  const char* separator = ": ";
 
   fclose(code_file);
-  fclose(data_file);
 
-  write_to_final_file(data_section_header);
+  write_to_final_file(DATA_SECTION_HEADER);
 
-  data_file = fopen(data_file_name, "r");
+  for (i=0;i<data_item_members;i++) {
+    data_line = (char*)malloc(
+        strlen(data_items[i].name)*sizeof(char) +
+        strlen(separator)*sizeof(char) +
+        strlen(data_items[i].value)*sizeof(char));
 
-  while ((read = getline(&line, &len, data_file)) != -1) {
-    write_to_final_file(line);
+    sprintf(data_line, "%s%s%s\n", data_items[i].name, separator, data_items[i].value);
+    write_to_final_file(data_line);
+
+    free(data_line);
   }
 
-  fclose(data_file);
-
-  write_to_final_file(text_section_header);
-  write_to_final_file(start_global);
-  write_to_final_file(start_label);
+  write_to_final_file(TEXT_SECTION_HEADER);
+  write_to_final_file(START_GLOBAL);
+  write_to_final_file(START_LABEL);
 
   code_file = fopen(code_file_name, "r");
 
@@ -182,5 +196,14 @@ void finalise(void) {
 
   fclose(code_file);
   fclose(final_file);
+
+  if (data_item_counter>0) {
+    free(data_items);
+  }
 }
+
+#undef DATA_SECTION_HEADER
+#undef TEXT_SECTION_HEADER
+#undef START_LABEL
+#undef START_GLOBAL
 

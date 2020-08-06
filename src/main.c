@@ -139,7 +139,6 @@ char* extract_string(char* s, int line_no) {
   return s;
 }
 
-
 void dispatch(char* s, int line_no) {
   char *msg;
   char* keyword;
