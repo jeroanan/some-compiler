@@ -199,10 +199,13 @@ void comp_declare_variable(char* s, char type, int line_no) {
     }
   }
 
-  if (type=='i') {
-    declare_variable('i', s);
+  if (type!='i') {
+      comp_error_at_line("Unrecognised variable type", line_no);
   } else {
-    comp_error_at_line("Unrecognised variable type", line_no);
+    if (!value)
+      declare_variable('i', name);
+    else
+      declare_and_initialize_variable('i', name, value);
   }
 
   free(tmpS);
