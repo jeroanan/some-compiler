@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 #include "error.h"
-#include "nasm.h"
+#include "nasm/nasm.h"
 
 void compile_file(char* filename);
 void dispatch(char* s, int line_no);
