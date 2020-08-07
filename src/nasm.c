@@ -59,9 +59,6 @@ char* join_two_strings(char* s1, char* s2) {
 
 void print(char* s) {
   char num[80];
-  /*
-  char* data_name_prefix = "data";
-  */
   char* data_label;
   char* data_len_label;
 
@@ -107,16 +104,13 @@ void print(char* s) {
 #undef EDX_INST
 #undef LEN_SUFFIX
 
-void declare_variable(char type, char* name) {
-
+void declare_and_initialize_variable(char type, char* name, char* initial_value) {
   char* nasm_type;
-  char* initial_value;
   char value_string[80];
 
   switch (type) {
     case 'i':
       nasm_type = "DW";
-      initial_value = "0";
       break;
     default:
       fprintf(stderr, "Unknown type: %s", type);
@@ -125,7 +119,10 @@ void declare_variable(char type, char* name) {
 
   sprintf(value_string, "%s %s", nasm_type, initial_value);
   add_data_item(name, value_string);
+}
 
+void declare_variable(char type, char* name) {
+  declare_and_initialize_variable(type, name, "0");
 }
 
 void prog_exit(void) {
