@@ -2,8 +2,8 @@ OBJDIR=obj
 SRCDIR=src
 NASMDIR=src/nasm
 
-comp: $(OBJDIR)/main.o $(OBJDIR)/error.o $(OBJDIR)/nasm.o $(OBJDIR)/var.o $(OBJDIR)/stringfunc.o
-	$(CC) -g -o comp $(OBJDIR)/main.o $(OBJDIR)/error.o $(OBJDIR)/nasm.o $(OBJDIR)/var.o $(OBJDIR)/stringfunc.o
+comp: $(OBJDIR)/main.o $(OBJDIR)/error.o $(OBJDIR)/nasm.o $(OBJDIR)/var.o $(OBJDIR)/stringfunc.o $(OBJDIR)/nasm_print.o
+	$(CC) -g -o comp $(OBJDIR)/*.o 
 
 $(OBJDIR)/main.o: $(SRCDIR)/main.c 
 	$(CC) -g -c -o $(OBJDIR)/main.o $(SRCDIR)/main.c 
@@ -19,6 +19,9 @@ $(OBJDIR)/stringfunc.o: $(SRCDIR)/stringfunc.c
 
 $(OBJDIR)/nasm.o: $(NASMDIR)/nasm.c
 	$(CC) -g -c -o $(OBJDIR)/nasm.o $(NASMDIR)/nasm.c
+
+$(OBJDIR)/nasm_print.o: $(NASMDIR)/print.c
+	$(CC) -g -c -o $(OBJDIR)/nasm_print.o $(NASMDIR)/print.c
 
 clean:
 	rm comp; rm -rf obj
