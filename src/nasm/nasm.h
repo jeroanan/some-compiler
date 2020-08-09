@@ -1,5 +1,6 @@
 #ifndef NASM_H
 #define NASM_H
+void add_bss_item(char* name, char *keyword, char* value);
 void add_data_item(char* name, char* value);
 void declare_and_initialize_variable(char type, char* name, char* initial_value);
 void declare_variable(char type, char* name);

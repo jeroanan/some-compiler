@@ -4,6 +4,7 @@
 
 #include "error.h"
 #include "nasm.h"
+#include "../stringfunc.h"
 
 FILE* get_file(void);
 void write_to_code_file(char* t);
@@ -17,6 +18,12 @@ struct DataItem {
 int data_item_counter;
 int data_item_members;
 
+struct BssItem {
+  char* name;
+  char* keyword;
+  char* value;
+};
+
 const char* code_file_name = "output/code.asm";
 FILE* code_file;
 
@@ -25,8 +32,10 @@ FILE* final_file;
 
 struct DataItem* data_items;
 
-void add_data_item(char* name, char* value) {
+struct BssItem* bss_items;
+int bss_counter=0;
 
+void add_data_item(char* name, char* value) {
   struct DataItem di; 
 
   if (data_item_members == 0) {
@@ -44,9 +53,32 @@ void add_data_item(char* name, char* value) {
   ++data_item_members;
 }
 
+void add_bss_item(char* name, char *keyword, char* value) {
+  struct BssItem bi;
+
+  if (!bss_counter) {
+    bss_items = (struct BssItem*)malloc(sizeof(struct BssItem));
+  } else {
+    bss_items = (struct BssItem*)realloc(bss_items, (bss_counter+1) * sizeof (struct BssItem));
+  }
+
+  bi.name = (char*)malloc(strlen(name) * sizeof(char*));
+  bi.keyword = (char*)malloc(strlen(keyword) * sizeof(char*));
+  bi.value = (char*)malloc(strlen(value) * sizeof(char*));
+
+  strcpy(bi.name, trim_string(name));
+  strcpy(bi.keyword, keyword);
+  strcpy(bi.value, value);
+  
+  bss_items[bss_counter] = bi;
+
+  printf("name: %s, keyword: %s, value: %s\n", bi.name, bi.keyword, bi.value);
+  ++bss_counter;
+}
+
 char* join_two_strings(char* s1, char* s2) {
   char* tmp;
-  tmp = (char*)malloc(strlen(s1)*sizeof(char*) + strlen(s2)*sizeof(char*));
+  tmp = (char*)malloc(strlen(s1) * sizeof(char*) + strlen(s2) * sizeof(char*));
   sprintf(tmp, "%s%s", s1, s2);
 
   return tmp;
@@ -65,8 +97,13 @@ void declare_and_initialize_variable(char type, char* name, char* initial_value)
       exit(EXIT_FAILURE);
   }
 
-  sprintf(value_string, "%s %s", nasm_type, initial_value);
-  add_data_item(name, value_string);
+  sprintf(value_string, "%s", initial_value);
+  if (initial_value == "0") {
+    add_bss_item(name, "resd", value_string);
+  } else {
+    sprintf(value_string, "%s %s", nasm_type, initial_value);
+    add_data_item(trim_string(name), value_string);
+  }
 }
 
 void declare_variable(char type, char* name) {
@@ -100,6 +137,7 @@ void write_to_final_file(char* t) {
 }
 
 #define DATA_SECTION_HEADER "SECTION .DATA\n"
+#define BSS_SECTION_HEADER "SECTION .BSS\n"
 #define TEXT_SECTION_HEADER  "SECTION .TEXT\n"
 #define START_LABEL "_start:\n"
 #define START_GLOBAL "GLOBAL _start\n"
@@ -109,11 +147,31 @@ void finalise(void) {
   size_t len = 0;
   ssize_t read;
   int i;
-  char* data_line;
+  char* data_line; // TODO: Rename
 
   const char* separator = ": ";
+  const char* space = " ";
 
   fclose(code_file);
+
+  write_to_final_file(BSS_SECTION_HEADER);
+  for(i=0;i<bss_counter;i++) {
+    data_line = (char*)malloc(
+        strlen(bss_items[i].name) * sizeof(char*) +
+        strlen(separator) * sizeof(char*) +
+        strlen(bss_items[i].keyword) * sizeof(char*) +
+        strlen(space) * sizeof(char*) +
+        strlen(bss_items[i].value) * sizeof(char*));
+
+    sprintf(data_line, "%s%s%s%s%s\n", 
+        bss_items[i].name, 
+        separator, 
+        bss_items[i].keyword, 
+        space, 
+        bss_items[i].value);
+
+    write_to_final_file(data_line);
+  }
 
   write_to_final_file(DATA_SECTION_HEADER);
 
