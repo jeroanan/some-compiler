@@ -4,6 +4,10 @@
 
 #include "error.h"
 
+/*
+ * Emit a compiler error for a source code line no. with the given error 
+ * message
+ */
 void comp_error_at_line(char* msg, int line_no) {
   const char* m1 = "Error at line ";
   const char* m2 = ": ";
@@ -22,6 +26,9 @@ void comp_error_at_line(char* msg, int line_no) {
   free(full_line);
 }
 
+/*
+ * Emit the given error message and terminate
+ */
 void comp_error(char* msg) {
   fprintf(stderr, "%s\n", msg);
   exit(EXIT_FAILURE);

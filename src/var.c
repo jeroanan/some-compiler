@@ -13,6 +13,9 @@ int get_number_of_words(char* s);
 char* get_variable_name(char* s);
 char* get_variable_value(char* s);
 
+/*
+ * Handle compilation of a variable declaration
+ */
 void comp_declare_variable(char* s, char type, int line_no) {
 #define WORDS_DECLARATION_ONLY 1
 #define WORDS_DECLARE_INITIALIZE 3
@@ -60,6 +63,9 @@ void comp_declare_variable(char* s, char type, int line_no) {
 #undef WORDS_DECLARE_INITIALIZE
 }
 
+/*
+ * Get the number of words in the given string
+ */
 int get_number_of_words(char* s) {
   int c = 0;
   char* tmp = (char*)malloc(strlen(s) * sizeof(char*));
@@ -76,10 +82,16 @@ int get_number_of_words(char* s) {
   return c;
 }
 
+/*
+ * Get the name of the variable being defined in the given string
+ */
 char* get_variable_name(char* s) {
   return strtok(s, " ");
 }
 
+/*
+ * Get the value of the variable being defined in the given string
+ */
 char* get_variable_value(char* s) {
   if (!strtok(s, "=")) {
     return NULL;

@@ -23,6 +23,9 @@ int main(int argc, char* argv[]) {
   exit(EXIT_SUCCESS);
 }
 
+/*
+ * Are all characters in a string spaces?
+ */
 bool string_is_empty(char* s) {
 
   for (;*s;s++) {
@@ -34,6 +37,10 @@ bool string_is_empty(char* s) {
   return true;
 }
 
+/* 
+ * truncate a string a the point of a comment character '#'
+ * unless the '#' is within a single-quoted string
+ */
 char* remove_comments(char* s) {
   int i;
   bool in_string = false;
@@ -50,6 +57,10 @@ char* remove_comments(char* s) {
   return s;
 }
 
+/*
+ * Go line-by-line throuhg a file, trim it, remove comments and dispatch it to
+ * the relevant function
+ */
 void compile_file(char* filename) {
   char *line = NULL;
   size_t len = 0;
@@ -78,6 +89,9 @@ void compile_file(char* filename) {
   fclose(f);  
 }
 
+/*
+ * Get the zero-based index of the specified char in the specified string
+ */
 int get_location_of_character(char* s, char c) {
  
   int i;
@@ -91,6 +105,9 @@ int get_location_of_character(char* s, char c) {
   return -1;
 }
 
+/*
+ * Get the first word in a string
+ */
 char* get_first_word(char* s) {
   int l;
 
@@ -101,6 +118,9 @@ char* get_first_word(char* s) {
   return s;
 }
 
+/*
+ * Get the contents of a single-quoted string
+ */
 char* extract_string(char* s, int line_no) {
   if (*s!='\'') {
     comp_error_at_line("Missing opening '", line_no);
@@ -117,13 +137,20 @@ char* extract_string(char* s, int line_no) {
   return s;
 }
 
+/*
+ * Send the given line to the relevant function for compilation
+ */
 void dispatch(char* s, int line_no) {
   char *msg;
   char* keyword;
+  char* line_copy;
 
   if (!strlen(s)) {
     return;
   }
+
+  line_copy = (char*)malloc(strlen(s) * sizeof(char*));
+  strcpy(line_copy, s);
 
   keyword = get_first_word(s);
 
@@ -136,9 +163,14 @@ void dispatch(char* s, int line_no) {
     s+=4;
     comp_declare_variable(s, 'i', line_no);
   } else {
-    msg = (char*)malloc(strlen(unknown_keyword)*sizeof(char*) + strlen(keyword)*sizeof(char*));
+    msg = (char*)malloc(
+        strlen(unknown_keyword)*sizeof(char*) + 
+        strlen(keyword)*sizeof(char*));
+
     sprintf(msg, "%s%s", unknown_keyword, keyword);
     comp_error_at_line(msg, line_no);
     free(msg);
   }
+
+  free(line_copy);
 }

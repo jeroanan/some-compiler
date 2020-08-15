@@ -4,6 +4,9 @@
 #include "nasm.h"
 #include "../stringfunc.h"
 
+/*
+ * Output instructions for declaring and initializing a variable
+ */
 void declare_and_initialize_variable(char type, char* name, char* initial_value) {
   char* nasm_type;
   char value_string[80];
@@ -26,7 +29,9 @@ void declare_and_initialize_variable(char type, char* name, char* initial_value)
   }
 }
 
-
+/*
+ * Declare a variable
+ */
 void declare_variable(char type, char* name) {
   declare_and_initialize_variable(type, name, "0");
 }

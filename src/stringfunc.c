@@ -1,6 +1,9 @@
 #include <ctype.h>
 #include <string.h>
 
+/*
+ * Trim whitepsace from either side of the given string
+ */
 char* trim_string(char* s) {
 
   int i;

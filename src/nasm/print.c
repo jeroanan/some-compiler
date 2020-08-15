@@ -10,6 +10,9 @@
 
 extern int data_item_counter;
 
+/*
+ * Write instructions for printing the given string to std out.
+ */
 void print(char* s) {
   char num[80];
   char* data_label;
